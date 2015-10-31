@@ -1,7 +1,7 @@
 {
   "name": "fractalforest",
   "version": "1.0.0",
-  "description": "Exploration of Fractals and react.",
+  "description": "Exploration of Fractals and React.",
   "main": "app/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
