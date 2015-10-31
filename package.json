@@ -1,0 +1,19 @@
+{
+  "name": "fractalforest",
+  "version": "1.0.0",
+  "description": "Exploration of Fractals and react.",
+  "main": "app/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server"
+  },
+  "author": "remy younes",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-eslint": "^4.1.3",
+    "eslint": "^1.8.0",
+    "eslint-config-airbnb": "^0.1.0",
+    "eslint-plugin-react": "^3.6.3",
+    "webpack-dev-server": "1.12.1"
+  }
+}
