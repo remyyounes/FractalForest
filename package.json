@@ -23,6 +23,7 @@
     "webpack-dev-server": "1.12.1"
   },
   "dependencies": {
+    "physijs-browserify": "0.0.2",
     "ramda": "^0.18.0",
     "react": "^0.14.2",
     "react-dom": "^0.14.2",
