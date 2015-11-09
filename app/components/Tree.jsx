@@ -1,7 +1,5 @@
 import React from 'react';
-import Branch from './Branch.jsx';
 import TreeSimulator from '../lib/TreeSimulator.js';
-import { Vector3 } from 'three';
 import R from 'ramda';
 
 class Tree extends React.Component {
@@ -21,7 +19,7 @@ class Tree extends React.Component {
 
   componentDidMount() {
     const treeSimulator = new TreeSimulator({
-      depth: 8,
+      depth: 11,
       origin: this.props.origin,
       onUpdate: (tree) => {
         this.props.onUpdate();
@@ -33,8 +31,6 @@ class Tree extends React.Component {
   getBranches(branch) {
     let branches = [branch];
     if ( branch.branches ) {
-      // const subBranches = branch.branches.map( b => this.getBranches(b) );
-      // branches = branches.concat(subBranches);
       const subBranches = R.chain(
         (b) => this.getBranches(b)
       )(branch.branches);
@@ -49,19 +45,18 @@ class Tree extends React.Component {
     const { tree } = this.state;
     const trunk = tree;
     if ( !trunk ) return null;
-    const branchColor = 'brown';
     const branches = this.getBranches(trunk);
 
-    const renderedBranches = branches.map( (branch, i) => (
-        <Branch
-          key={i}
-          start={branch.start}
-          end={branch.end}
-          color={branchColor}
-          context={context}
-        />
-    ));
-    return (<span>{renderedBranches}</span>);
+    context.strokeStyle = 'yellow';
+    context.beginPath();
+    branches.map( (branch) => {
+      context.moveTo( branch.start.x, branch.start.y );
+      context.lineTo( branch.end.x, branch.end.y );
+    });
+    context.stroke();
+    context.closePath();
+
+    return null;
   }
 }
 
