@@ -13,6 +13,7 @@ let box = null;
 let trunk = null;
 let ground = null;
 let camera = null;
+let springLine = null;
 
 function initBoxes() {
   const boxMaterial = P.createMaterial(
@@ -22,7 +23,7 @@ function initBoxes() {
   );
 
   box = new P.BoxMesh(
-    new THREE.CubeGeometry( 15, 15, 15 ),
+    new THREE.CubeGeometry( 2, 2, 2 ),
     boxMaterial,
   );
 
@@ -31,7 +32,7 @@ function initBoxes() {
     boxMaterial
   );
   trunk.position.copy( new THREE.Vector3(0, -30, 0) );
-  const boxPosition = new THREE.Vector3(0, 10, 0);
+  const boxPosition = new THREE.Vector3(0, 20, 0);
   box.position.copy( boxPosition );
   box.rotation.x = (20) * Math.PI / 180;
   scene.add(box);
@@ -88,7 +89,7 @@ function initCamera() {
     1,
     1000
   );
-  camera.position.set( 60, 50, 60 );
+  camera.position.set( 150, 70, 60 );
   camera.lookAt( new THREE.Vector3(0, -10, 0));
   scene.add( camera );
 }
@@ -104,18 +105,36 @@ function initScene() {
   );
 }
 
+function initVectors() {
+  const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const geometry = new THREE.Geometry();
+  geometry.vertices.push(new THREE.Vector3(30, -110, 0));
+  geometry.vertices.push(new THREE.Vector3(30, 110, 0));
+  springLine = new THREE.Line(geometry, material);
+  scene.add(springLine);
+}
+
 function fixBranch() {
-  const anchor = new THREE.Vector3(0, 35, 0);
-  const target = box.position.clone().sub( anchor.add(trunk.position) );
+  const anchor = new THREE.Vector3(0, 35, 0).add(trunk.position.clone());
+  const target = box.position.clone().sub( anchor );
+
   const distance = target.length();
   const v = box.getLinearVelocity().length();
-  const k = 20000;
-  const b = 10300;
-  const vb = v * b;
+  const k = 1;
+  const b = 1;
+  const vb = (box.position.y < anchor.y ) ? -v * b : v * b;
   const kd = k * distance;
   const force = kd - vb;
-  console.log(force);
-  box.applyCentralForce(target.multiplyScalar(-force));
+  const finalForce = target.clone().multiplyScalar(-force);
+
+
+  springLine.geometry.vertices[0] = box.position.clone();
+  // springLine.geometry.vertices[1] = box.position.clone().add(finalForce);//anchor.clone(); //target.clone();
+  springLine.geometry.vertices[1] = box.position.clone().sub(target.clone());
+
+  springLine.geometry.verticesNeedUpdate = true;
+
+  box.applyCentralForce(finalForce);
 }
 
 function render() {
@@ -137,6 +156,7 @@ function main() {
   initLight();
   initGround();
   initBoxes();
+  initVectors();
   requestAnimationFrame(render);
 }
 
