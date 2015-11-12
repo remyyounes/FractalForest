@@ -97,7 +97,7 @@ function initCamera() {
 
 function initScene() {
   scene = new P.Scene();
-  scene.setGravity(new THREE.Vector3( 0, 0, 0 ));
+  scene.setGravity(new THREE.Vector3( 0, -5, 0 ));
   scene.addEventListener(
     'update',
     function onUpdatedPhysics() {
@@ -127,39 +127,41 @@ function initVectors() {
   scene.add(dampLine);
 }
 
-function fixBranch() {
-  const anchor = new THREE.Vector3(0, 35, 0).add(trunk.position.clone());
-  const target = box.position.clone().sub( anchor );
+function showForce(position, force, line) {
+  line.geometry.vertices[0] = position.clone();
+  line.geometry.vertices[1] = position.clone().add(force);
+  line.geometry.verticesNeedUpdate = true;
+}
+function getDampingForce(damping, velocity) {
+  const damp = -damping * velocity.length();
+  return velocity.clone().normalize().multiplyScalar(damp);
+}
 
+function getSpringForce(coefficient, target) {
   const distance = target.length();
-  const velocity = box.getLinearVelocity();
-  const v = velocity.length();
-  const k = 200;
-  const b = 10;
-  // const vb = velocity.y < 0 ? -v * b : v * b;
-  // const vb = v * b;
-  // const vb = velocity.length() * b;
-  const vb = v * b;
-  const kd = k * distance;
-  const force = -kd;
-  const finalForce = target.clone().normalize().multiplyScalar(force);
-  const dampForce = velocity.clone().normalize().multiplyScalar(-vb);
-  console.log(force);
+  const force = -coefficient * distance;
+  return target.clone().normalize().multiplyScalar(force);
+}
 
+function anchorTo(anchor, options, body) {
+  const bodyPos = body.position;
+  const target = bodyPos.clone().sub(anchor);
+  const velocity = body.getLinearVelocity();
+  const dampForce = getDampingForce(options.damping, velocity);
+  const springForce = getSpringForce(options.coefficient, target);
 
-  velocityLine.geometry.vertices[0] = box.position.clone();
-  velocityLine.geometry.vertices[1] = box.position.clone().add(box.getLinearVelocity().clone());
-  springLine.geometry.vertices[0] = box.position.clone();
-  springLine.geometry.vertices[1] = box.position.clone().add(finalForce);
-  dampLine.geometry.vertices[0] = box.position.clone();
-  dampLine.geometry.vertices[1] = box.position.clone().add(dampForce);
+  body.applyCentralForce(springForce.add(dampForce));
 
-  velocityLine.geometry.verticesNeedUpdate = true;
-  springLine.geometry.verticesNeedUpdate = true;
-  dampLine.geometry.verticesNeedUpdate = true;
+  showForce( bodyPos, velocity, velocityLine );
+  showForce( bodyPos, springForce, springLine );
+  showForce( bodyPos, dampForce, dampLine );
+}
 
-  box.applyCentralForce(finalForce);
-  box.applyCentralForce(dampForce);
+function fixBranch() {
+  const offset = new THREE.Vector3(0, 35, 0);
+  const anchor = offset.add(trunk.position.clone());
+
+  anchorTo(anchor, {coefficient: 8, damping: 1}, box);
 }
 
 function render() {
