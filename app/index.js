@@ -12,30 +12,22 @@ let box = null;
 let trunk = null;
 let ground = null;
 let camera = null;
-let springLine = null;
-let velocityLine = null;
-let dampLine = null;
 
 function initBoxes() {
   const boxMaterial = P.createMaterial(
-    new THREE.MeshBasicMaterial({ color: 0x00FF00, transparent: true, opacity: 0.4 }),
+    new THREE.MeshBasicMaterial({
+      color: 0x00FF00, transparent: true, opacity: 0.4 }
+    ),
     0, // friction
     32.8 // restitution/bounciness
   );
 
-  box = new P.BoxMesh(
-    new THREE.CubeGeometry( 1, 1, 1 ),
-    boxMaterial,
-  );
+  box = new P.BoxMesh( new THREE.CubeGeometry( 1, 1, 1 ), boxMaterial );
+  trunk = new P.BoxMesh( new THREE.CubeGeometry( 15, 15, 15 ), boxMaterial );
 
-  trunk = new P.BoxMesh(
-    new THREE.CubeGeometry( 15, 15, 15 ),
-    boxMaterial
-  );
   trunk.position.copy( new THREE.Vector3(0, -30, 0) );
-  const boxPosition = new THREE.Vector3(0, 20, 0);
-  box.position.copy( boxPosition );
-  box.rotation.x = (20) * Math.PI / 180;
+  box.position.copy( new THREE.Vector3(0, 20, 0) );
+
   scene.add(box);
   scene.add(trunk);
 }
@@ -57,9 +49,9 @@ function initGround() {
   scene.add(ground);
 }
 
-function initRenderer(mount) {
+function initRenderer(mount, width, height) {
   renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setSize( width, height );
   renderer.shadowMap.enabled = true;
   renderer.shadowMapSoft = true;
   mount.appendChild( renderer.domElement );
@@ -83,13 +75,8 @@ function initLight() {
   scene.add( light );
 }
 
-function initCamera() {
-  camera = new THREE.PerspectiveCamera(
-    35,
-    window.innerWidth / window.innerHeight,
-    1,
-    1000
-  );
+function initCamera(width, height) {
+  camera = new THREE.PerspectiveCamera( 35, width / height, 1, 1000 );
   camera.position.set( 50, 30, 60 );
   camera.lookAt( new THREE.Vector3(0, 5, 0));
   scene.add( camera );
@@ -106,32 +93,31 @@ function initScene() {
   );
 }
 
-function initVectors() {
-  const material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
-  const materialRed = new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 1.5 });
-  const materialYellow = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 1.5 });
+
+function createVector(name, color, opacity) {
+  const transparent = true;
   const geometry = new THREE.Geometry();
-  const velocityGeometry = new THREE.Geometry();
-  const dampGeometry = new THREE.Geometry();
+  const material = new THREE.LineBasicMaterial({ color, transparent, opacity });
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
-  velocityGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
-  velocityGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
-  dampGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
-  dampGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
-  springLine = new THREE.Line(geometry, material);
-  velocityLine = new THREE.Line(velocityGeometry, materialRed);
-  dampLine = new THREE.Line(dampGeometry, materialYellow);
-  scene.add(springLine);
-  scene.add(velocityLine);
-  scene.add(dampLine);
+  const line = new THREE.Line(geometry, material);
+  line.name = name;
+  scene.add(line);
 }
 
-function showForce(position, force, line) {
+function initVectors() {
+  createVector('springLine', 0x00ffff, 0.5 );
+  createVector('velocityLine', 0xff0000, 1.5 );
+  createVector('dampLine', 0xffff00, 1.5 );
+}
+
+function showForce(position, force, lineName) {
+  const line = scene.getObjectByName(lineName);
   line.geometry.vertices[0] = position.clone();
   line.geometry.vertices[1] = position.clone().add(force);
   line.geometry.verticesNeedUpdate = true;
 }
+
 function getDampingForce(damping, velocity) {
   const damp = -damping * velocity.length();
   return velocity.clone().normalize().multiplyScalar(damp);
@@ -152,9 +138,9 @@ function anchorTo(anchor, options, body) {
 
   body.applyCentralForce(springForce.add(dampForce));
 
-  showForce( bodyPos, velocity, velocityLine );
-  showForce( bodyPos, springForce, springLine );
-  showForce( bodyPos, dampForce, dampLine );
+  showForce( bodyPos, velocity, 'velocityLine' );
+  showForce( bodyPos, springForce, 'springLine' );
+  showForce( bodyPos, dampForce, 'dampLine' );
 }
 
 function fixBranch() {
@@ -173,13 +159,14 @@ function render() {
 
 
 function main() {
-  const mount = window.document.body.appendChild(
+  const { document, innerWidth: width, innerHeight: height } = window;
+  const mount = document.body.appendChild(
     document.createElement('div')
   );
 
-  initRenderer(mount);
+  initRenderer(mount, width, height);
   initScene();
-  initCamera();
+  initCamera(width, height);
   initLight();
   initGround();
   initBoxes();
